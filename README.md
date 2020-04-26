@@ -17,9 +17,9 @@ def Main:
 	use scope
 	
 	var api_endpoint = 'https://reqres.in/api/users'
-	var api_data = fetch_data(api_endpoint)
+	var api_data = main.fetch_data(api_endpoint)
 	
-    # If the last API call was success
+	# If the last API call was success
 	if success
 		print api_data
 	else
