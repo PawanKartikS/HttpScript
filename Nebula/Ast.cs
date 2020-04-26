@@ -180,8 +180,11 @@ namespace Nebula
             if (_fnAddrTable.ContainsKey(defNode.FnName))
                 throw new ArgumentException(_error.FnRedeclaration(defNode.FnName));
 
-            _fnAddrTable[defNode.FnName] = defNode;
-            RegisterFnSignature(defNode.FnName, defNode.FnArgs);
+            var fnName = defNode.FnName;
+            if (fnName != "Main")
+                fnName = $"{_currentSrcFile}.{defNode.FnName}";
+            _fnAddrTable[fnName] = defNode;
+            RegisterFnSignature(fnName, defNode.FnArgs);
         }
 
         private void _InvokeDel(StmtNode node)

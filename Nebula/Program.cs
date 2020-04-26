@@ -16,7 +16,7 @@ namespace Nebula
             while (lexer.LinesLeft())
             {
                 var tokens = lexer.Tokenize();
-                ast.AppendNode(tokens.ToArray(), args[0]);
+                ast.AppendNode(tokens.ToArray(), lexer.ExtractFileName());
             }
 
             ast.VisitNodes();

@@ -9,10 +9,12 @@ namespace Nebula
     internal class Lexer
     {
         private int _idx, _srcLineNum;
+        private readonly string _srcFile;
         private readonly List<string> _srcLines;
 
         public Lexer(string srcFile)
         {
+            _srcFile = srcFile;
             _idx = _srcLineNum = 0;
 
             if (srcFile == null)
@@ -25,6 +27,15 @@ namespace Nebula
                 throw new ArgumentException($"fatal: invalid source file {srcFile}");
 
             _srcLines = new List<string>(File.ReadLines(srcFile));
+        }
+
+        public string ExtractFileName()
+        {
+            var beg = _srcFile.LastIndexOf('/');
+            var end = _srcFile.IndexOf('.');
+
+            beg = beg == -1 ? 0 : beg + 1;
+            return _srcFile.Substring(beg, end - beg);
         }
 
         private static List<int> _GetQuoteIdx(string line)

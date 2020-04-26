@@ -126,7 +126,7 @@ namespace Nebula
             if (type != TokenType.Unknown)
                 return type;
 
-            if (token.Any(c => !char.IsLetterOrDigit(c) && c != '_'))
+            if (token.Any(c => !char.IsLetterOrDigit(c) && c != '_' && c != '.'))
                 return TokenType.Unknown;
 
             return (token.Length == 1 && char.IsLetter(token[0]) || token.Length > 1)
