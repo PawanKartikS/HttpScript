@@ -60,6 +60,8 @@ namespace Nebula
 
             if (tokenType == TokenType.Def)
             {
+                if (_insideFn)
+                    throw new ArgumentException(_error.NestedFn(tokens[1]));
                 _InvokeDef(node);
                 _insideFn = true;
             }

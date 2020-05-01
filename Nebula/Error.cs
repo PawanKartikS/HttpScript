@@ -80,6 +80,11 @@ namespace Nebula
             return _GenWarn("missing res call to one or more API endpoints");
         }
 
+        public string NestedFn(string chFn)
+        {
+            return _GenWarn($"nested function - function {chFn} lies inside another function");
+        }
+
         public string OpenCodeBlock()
         {
             return _GenError("missing closure for code block");
