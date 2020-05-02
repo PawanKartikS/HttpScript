@@ -7,16 +7,25 @@ namespace Nebula
     {
         private static void Main(string[] args)
         {
-            if (args.Length != 1)
-                throw new ArgumentException("fatal: required source file as arg");
+            if (args.Length == 0)
+                throw new ArgumentException("fatal: required source file(s) as arg");
+
+            static bool IsValidSrcFile(string srcFile)
+            {
+                var beg = srcFile.LastIndexOf('.');
+                return beg != -1 && srcFile.Substring(beg) == ".neb";
+            }
+
+            var srcFiles = args.Where(IsValidSrcFile).ToList();
 
             var ast = new Ast();
-            var lexer = new Lexer(args[0]);
-
-            while (lexer.LinesLeft())
+            foreach (var lexer in srcFiles.Select(srcFile => new Lexer(srcFile)))
             {
-                var tokens = lexer.Tokenize();
-                ast.AppendNode(tokens.ToArray(), lexer.ExtractFileName());
+                while (lexer.LinesLeft())
+                {
+                    var tokens = lexer.Tokenize();
+                    ast.AppendNode(tokens.ToArray(), lexer.ExtractFileName());
+                }
             }
 
             ast.VisitNodes();
