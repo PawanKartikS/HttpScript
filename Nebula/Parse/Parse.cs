@@ -75,6 +75,8 @@ namespace Nebula.Parse
                     return new UrlNode(tokens);
                 case TokenType.Use:
                     return new UseNode(tokens);
+                case TokenType.Var when tokens.Length > 4 && GetTokenType(tokens[3]) == TokenType.Strlen:
+                    return new FnResNode(tokens) {Keyword = TokenType.FnResult};
                 case TokenType.Var when tokens.Length > 4 && GetTokenType(tokens[4]) == TokenType.OpenPr:
                     return new FnResNode(tokens) {Keyword = TokenType.FnResult};
                 case TokenType.Var:

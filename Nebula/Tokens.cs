@@ -62,6 +62,8 @@ namespace Nebula
             // var y = Foo()  [FnResult]
             FnCall,
             FnResult,
+            Strlen,
+            Strrev,
             
             Unknown
         };
@@ -120,6 +122,11 @@ namespace Nebula
                 "<"   => TokenType.LessThan,
                 "<="  => TokenType.LessThanEq,
                 "!="  => TokenType.NotEqual,
+                
+                // Built-in functions
+                // They must map to Variable or else the Parser fails!
+                "strlen" => TokenType.Variable,
+                "strrev" => TokenType.Variable,
                 _ => TokenType.Unknown
             };
 

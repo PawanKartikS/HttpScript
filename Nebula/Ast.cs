@@ -144,27 +144,8 @@ namespace Nebula
             // We need to bind the arguments as: arg1 -> a, arg2 -> b, 1.0 -> c
             // We do this by fetching values of arg1 and arg2 (1.0 is arg3), init a new frame and then
             // register them as new symbols so that they become available when controller enters Foo.
-            var alias = new List<string>();
-            var values = new List<Tuple<string, TokenType>>();
-            var fnSignature = GetFnSignature(fnName);
-
-            var idx = 0;
-            foreach (var (arg, argType) in fnArgs)
-            {
-                var value = arg;
-                var type = argType;
-
-                if (argType == TokenType.Variable)
-                {
-                    var decl = GetSymbolValue(arg);
-                    value = decl.Value;
-                    type = decl.Type;
-                }
-
-                values.Add(new Tuple<string, TokenType>(value, type));
-                alias.Add(fnSignature[idx]);
-                idx++;
-            }
+            var alias = GetFnSignature(fnName);
+            var values = fnArgs.ToList();
 
             if (alias.Count != values.Count)
                 throw new ArgumentException(_error.InternalError("alias.Count != values.Count"));
@@ -173,7 +154,22 @@ namespace Nebula
             // immediately invoke.
             InitNewFrame();
             for (var i = 0; i < alias.Count; i++)
-                RegisterSymbol(fnSignature[i], values[i].Item1, values[i].Item2, _currentDepth, fnName);
+                RegisterSymbol(alias[i], values[i].Item1, values[i].Item2, _currentDepth, fnName);
+        }
+        
+        private void _InvokeBuiltInFn(string fnName, IEnumerable<Tuple<string, TokenType>> fnArgs)
+        {
+            // Avoid HashSet<> to prevent additional overhead!
+            var res = fnName switch
+            {
+                "strlen" => Builtin.StringMethods.StringLength(fnArgs.ToList()),
+                "strrev" => Builtin.StringMethods.StringRev(fnArgs.ToList()),
+                _ => null
+            };
+
+            if (res == null)
+                throw new ArgumentException(_error.UndeclaredFn(fnName));
+            _fnReturnStack.Push(res);
         }
 
         private void _InvokeDef(StmtNode node)
@@ -207,8 +203,9 @@ namespace Nebula
             RegisterSymbol(symbol, value.ToString(), TokenType.StringLiteral, _currentDepth, _currentFnScope);
         }
 
-        private void _InvokeFn(string fnName, IReadOnlyCollection<Tuple<string, TokenType>> fnArgs)
+        private void _InvokeFn(string fnName, IEnumerable<Tuple<string, TokenType>> fnArgs)
         {
+            var args = _ResolveFnArgs(fnArgs);
             // Procedure for invoking a function -
             //   1. Check if function is declared.
             //   2. Check if function signature matches and the required args are provided.
@@ -217,12 +214,17 @@ namespace Nebula
             //   5. Execute the function.
 
             if (!_fnAddrTable.ContainsKey(fnName))
-                throw new ArgumentException(_error.UndeclaredFn(fnName));
+            {
+                // Try and see if this is a builtin function.
+                // If it is not, let _InvokeBuiltInFn handle it.
+                _InvokeBuiltInFn(fnName, args);
+                return;
+            }
 
-            if (fnArgs.Count != GetFnSignature(fnName).Count)
+            if (args.Count != GetFnSignature(fnName).Count)
                 throw new ArgumentException(_error.ArgCountMismatch(fnName));
 
-            _InitFnArgs(fnName, fnArgs);
+            _InitFnArgs(fnName, args);
             _fnStack.Push(_currentFnScope);
 
             _currentFnScope = fnName;
@@ -435,6 +437,26 @@ namespace Nebula
                 TokenType.End  => true,
                 _ => false
             };
+        }
+
+        private List<Tuple<string, TokenType>> _ResolveFnArgs(IEnumerable<Tuple<string, TokenType>> fnArgs)
+        {
+            var args = new List<Tuple<string, TokenType>>();
+            foreach (var (arg, argType) in fnArgs)
+            {
+                var i1 = arg;
+                var i2 = argType;
+                if (argType == TokenType.Variable)
+                {
+                    var d = GetSymbolValue(arg);
+                    i1 = d.Value;
+                    i2 = d.Type;
+                }
+                
+                args.Add(new Tuple<string, TokenType>(i1, i2));
+            }
+
+            return args;
         }
 
         public void VisitNodes(bool dumpSymbolTable = false)
