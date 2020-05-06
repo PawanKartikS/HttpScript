@@ -40,6 +40,11 @@ namespace Nebula
             return _GenWarn("condition depends on values that do not change at runtime");
         }
 
+        public string ConstantModif()
+        {
+            return _GenWarn("trying to modify symbol marked as constant");
+        }
+
         public string DanglingStatement(string keyword)
         {
             return _GenError($"dangling statement - {keyword}");

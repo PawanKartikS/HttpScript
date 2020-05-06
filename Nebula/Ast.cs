@@ -171,6 +171,15 @@ namespace Nebula
                 throw new ArgumentException(_error.UndeclaredFn(fnName));
             _fnReturnStack.Push(res);
         }
+        
+        private void _InvokeDec(StmtNode node)
+        {
+            var incNode = (UnaryNode) node;
+            var d = _InvokeUnary(node);
+            
+            var newVal = (int.Parse(d.Value) - 1).ToString();
+            RegisterSymbol(incNode.Arg, newVal, TokenType.Numeric, d.Depth, _currentFnScope);
+        }
 
         private void _InvokeDef(StmtNode node)
         {
@@ -319,6 +328,15 @@ namespace Nebula
             return ifNode.InverseEval ? !result : result;
         }
 
+        private void _InvokeInc(StmtNode node)
+        {
+            var incNode = (UnaryNode) node;
+            var d = _InvokeUnary(node);
+            
+            var newVal = (int.Parse(d.Value) + 1).ToString();
+            RegisterSymbol(incNode.Arg, newVal, TokenType.Numeric, d.Depth, _currentFnScope);
+        }
+
         private void _InvokePrint(StmtNode node)
         {
             var printNode = (PrintNode) node;
@@ -426,6 +444,20 @@ namespace Nebula
             RegisterSymbol(varNode.Lhs, rhs, rhsType, _currentDepth, _currentFnScope, varNode.IsConstant);
         }
 
+        private Decl _InvokeUnary(StmtNode node)
+        {
+            var incNode = (UnaryNode) node;
+            var d = GetSymbolValue(incNode.Arg);
+            
+            if (d.Type != TokenType.Numeric)
+                throw new ArgumentException("fatal: Numeric type is required for increment op");
+            
+            if (d.IsConstant)
+                throw new ArgumentException(_error.ConstantModif());
+
+            return d;
+        }
+
         private static bool _IsBranch(TokenType type)
         {
             return type switch
@@ -491,7 +523,10 @@ namespace Nebula
             _error.LineNum = node.LineNum;
 
             var nodeType = node.Keyword;
-            if (nodeType == TokenType.Del)
+            
+            if (nodeType == TokenType.PostDecOp)
+                _InvokeDec(node);
+            else if (nodeType == TokenType.Del)
                 _InvokeDel(node);
             else if (nodeType == TokenType.Err)
                 _InvokeErr(node);
@@ -529,6 +564,8 @@ namespace Nebula
                 if (_scopeEnabled)
                     ScopeCleanUp(_currentDepth);
             }
+            else if (nodeType == TokenType.PostIncOp)
+                _InvokeInc(node);
             else if (nodeType == TokenType.Print)
                 _InvokePrint(node);
             else if (nodeType == TokenType.Read)

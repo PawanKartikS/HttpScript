@@ -41,6 +41,8 @@ namespace Nebula
             EqualTo,
             GreaterThan,
             GreaterThanEq,
+            Inc,
+            Dec,
             OpenBr,
             CloseBr,
             OpenPr,
@@ -62,11 +64,13 @@ namespace Nebula
             // var y = Foo()  [FnResult]
             FnCall,
             FnResult,
-            Strlen,
-            Strrev,
+            PostIncOp,
+            PostDecOp,
             
             Unknown
         };
+
+        public static TokenType GetTokenType(char c) => GetTokenType($"{c}");
 
         public static TokenType GetTokenType(string token)
         {
@@ -114,6 +118,8 @@ namespace Nebula
                 "="   => TokenType.EqualTo,
                 ">"   => TokenType.GreaterThan,
                 ">="  => TokenType.GreaterThanEq,
+                "+"   => TokenType.Inc,
+                "-"   => TokenType.Dec,
                 "{"   => TokenType.OpenBr,
                 "}"   => TokenType.CloseBr,
                 "("   => TokenType.OpenPr,
