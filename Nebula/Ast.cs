@@ -136,6 +136,15 @@ namespace Nebula
                 _stack.Peek().Alt.Add(node);
         }
 
+        public void GenStackTrace(string errMessage)
+        {
+            Console.WriteLine($"\nStack trace -\nIn source file - {_currentSrcFile}.neb");
+            Console.WriteLine($"{_currentFnScope}() - {errMessage}");
+            
+            while (_fnStack.Count > 0)
+                Console.WriteLine($"{_fnStack.Pop()}()");
+        }
+
         private void _InitFnArgs(string fnName, IEnumerable<Tuple<string, TokenType>> fnArgs)
         {
             // def Foo(a, b, c)
