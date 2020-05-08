@@ -1,11 +1,18 @@
+using System;
+using System.Collections.Generic;
+
 namespace Nebula
 {
-    internal class Error
+    internal class Diagnostics
     {
         public int LineNum;
         public string SrcFile;
 
-        public Error(int lineNum, string srcFile)
+        public Diagnostics()
+        {
+        }
+
+        public Diagnostics(int lineNum, string srcFile)
         {
             LineNum = lineNum;
             SrcFile = srcFile;
@@ -14,6 +21,15 @@ namespace Nebula
         private string _GenError(string err) => $"Error L{LineNum} in {SrcFile}: {err}.";
 
         private string _GenWarn(string warn) => $"Warn L{LineNum} in {SrcFile}: {warn}.";
+        
+        public static void GenStackTrace(string err, string srcFile, string fnScope, Stack<string> fnStack)
+        {
+            Console.WriteLine($"\nStack trace -\nIn source file - {srcFile}.neb");
+            Console.WriteLine($"{fnScope}() - {err}");
+            
+            while (fnStack.Count > 0)
+                Console.WriteLine($"{fnStack.Pop()}()");
+        }
 
         public string AccessVoidFnRes(string fnName)
         {

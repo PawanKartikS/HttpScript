@@ -9,7 +9,7 @@ namespace Nebula
 {
     internal class Ast : SymbolTable
     {
-        private readonly Error _error;
+        private readonly Diagnostics _diagnostics;
         private readonly List<StmtNode> _body;
         private readonly Stack<StmtNode> _stack;
         private readonly Stack<string> _fnStack;
@@ -24,7 +24,7 @@ namespace Nebula
 
         public Ast()
         {
-            _error = new Error(_currentLineNum, _currentFnScope);
+            _diagnostics = new Diagnostics();
             _body = new List<StmtNode>();
             _stack = new Stack<StmtNode>();
             _fnStack = new Stack<string>();
@@ -43,8 +43,8 @@ namespace Nebula
             _currentLineNum++;
             _currentSrcFile = currentSrcFile;
 
-            _error.LineNum = _currentLineNum;
-            _error.SrcFile = _currentSrcFile;
+            _diagnostics.LineNum = _currentLineNum;
+            _diagnostics.SrcFile = _currentSrcFile;
 
             if (tokens.Length == 0)
                 return;
@@ -56,18 +56,18 @@ namespace Nebula
 
             var node = Parse.Parse.ToNode(tokens);
             if (node == null)
-                throw new ArgumentException(_error.UnExpectedKeyword(keyword));
+                throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
 
             if (tokenType == TokenType.Def)
             {
                 if (_insideFn)
-                    throw new ArgumentException(_error.NestedFn(tokens[1]));
+                    throw new ArgumentException(_diagnostics.NestedFn(tokens[1]));
                 _InvokeDef(node);
                 _insideFn = true;
             }
 
             if (node.Keyword != TokenType.Def && !_insideFn)
-                throw new ArgumentException(_error.DanglingStatement(keyword));
+                throw new ArgumentException(_diagnostics.DanglingStatement(keyword));
 
             node.LineNum = _currentLineNum;
             node.SrcFile = _currentSrcFile;
@@ -79,7 +79,7 @@ namespace Nebula
                     return;
 
                 if (tokenType != TokenType.Def && tokenType != TokenType.For && tokenType != TokenType.If)
-                    throw new ArgumentException(_error.UnExpectedKeyword(keyword));
+                    throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
 
                 _lr = 1;
                 _stack.Push(node);
@@ -102,7 +102,7 @@ namespace Nebula
             if (tokenType == TokenType.Else)
             {
                 if (_stack.Peek().Keyword != TokenType.If)
-                    throw new ArgumentException(_error.UnExpectedKeyword(keyword));
+                    throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
 
                 _lr = -1;
                 var elseNode = (ElseNode) node;
@@ -116,7 +116,7 @@ namespace Nebula
             {
                 var top = _stack.Peek().Keyword;
                 if (top != TokenType.Def && top != TokenType.For && top != TokenType.If)
-                    throw new ArgumentException(_error.UnExpectedKeyword(keyword));
+                    throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
                 
                 if (_stack.Peek().Keyword == TokenType.Def)
                     _insideFn = false;
@@ -136,14 +136,7 @@ namespace Nebula
                 _stack.Peek().Alt.Add(node);
         }
 
-        public void GenStackTrace(string errMessage)
-        {
-            Console.WriteLine($"\nStack trace -\nIn source file - {_currentSrcFile}.neb");
-            Console.WriteLine($"{_currentFnScope}() - {errMessage}");
-            
-            while (_fnStack.Count > 0)
-                Console.WriteLine($"{_fnStack.Pop()}()");
-        }
+        public void DumpStackTrace(string err) => Diagnostics.GenStackTrace(err, _currentSrcFile, _currentFnScope, _fnStack);
 
         private void _InitFnArgs(string fnName, IEnumerable<Tuple<string, TokenType>> fnArgs)
         {
@@ -157,7 +150,7 @@ namespace Nebula
             var values = fnArgs.ToList();
 
             if (alias.Count != values.Count)
-                throw new ArgumentException(_error.InternalError("alias.Count != values.Count"));
+                throw new ArgumentException(_diagnostics.InternalError("alias.Count != values.Count"));
 
             // We init a new frame here so that the args are available for the function we're about to
             // immediately invoke.
@@ -177,7 +170,7 @@ namespace Nebula
             };
 
             if (res == null)
-                throw new ArgumentException(_error.UndeclaredFn(fnName));
+                throw new ArgumentException(_diagnostics.UndeclaredFn(fnName));
             _fnReturnStack.Push(res);
         }
         
@@ -194,7 +187,7 @@ namespace Nebula
         {
             var defNode = (DefNode) node;
             if (_fnAddrTable.ContainsKey(defNode.FnName))
-                throw new ArgumentException(_error.FnRedeclaration(defNode.FnName));
+                throw new ArgumentException(_diagnostics.FnRedeclaration(defNode.FnName));
 
             var fnName = defNode.FnName;
             if (fnName != "Main")
@@ -210,7 +203,7 @@ namespace Nebula
                 return;
 
             if (!IsSymbolRegistered(delNode.Var, true))
-                throw new ArgumentException(_error.UndeclaredSymbol(delNode.Var));
+                throw new ArgumentException(_diagnostics.UndeclaredSymbol(delNode.Var));
         }
 
         private void _InvokeErr(StmtNode node)
@@ -240,7 +233,7 @@ namespace Nebula
             }
 
             if (args.Count != GetFnSignature(fnName).Count)
-                throw new ArgumentException(_error.ArgCountMismatch(fnName));
+                throw new ArgumentException(_diagnostics.ArgCountMismatch(fnName));
 
             _InitFnArgs(fnName, args);
             _fnStack.Push(_currentFnScope);
@@ -253,7 +246,7 @@ namespace Nebula
             {
                 if (hitRet)
                 {
-                    Console.WriteLine(_error.UnreachableCode(fnName));
+                    Console.WriteLine(_diagnostics.UnreachableCode(fnName));
                     break;
                 }
 
@@ -273,7 +266,7 @@ namespace Nebula
             _InvokeFn(fnResNode.FnName, fnResNode.FnArgs);
 
             if (_fnReturnStack.Count <= stackSz)
-                throw new ArgumentException(_error.AccessVoidFnRes(fnResNode.FnName));
+                throw new ArgumentException(_diagnostics.AccessVoidFnRes(fnResNode.FnName));
 
             var (result, resultType) = _fnReturnStack.Pop();
             RegisterSymbol(fnResNode.Lhs, result, resultType, _currentDepth, _currentFnScope);
@@ -330,7 +323,7 @@ namespace Nebula
             }
 
             if (ifNode.LhsType != TokenType.Variable && ifNode.RhsType != TokenType.Variable && _warnsEnabled)
-                Console.WriteLine(_error.ConditionConstants());
+                Console.WriteLine(_diagnostics.ConditionConstants());
 
             var result = Evaluator.Evaluate(lhs, rhs, lhsType, rhsType,
                 ifNode.ComparisonOperator);
@@ -373,10 +366,10 @@ namespace Nebula
             _lastStatusCode = statusCode;
 
             if (value == null && _warnsEnabled)
-                throw new ArgumentException(_error.ApiResReadError(urlNode.Endpoint));
+                throw new ArgumentException(_diagnostics.ApiResReadError(urlNode.Endpoint));
 
             if (statusCode != HttpStatusCode.OK && _warnsEnabled)
-                Console.WriteLine(_error.ErrCodeNot200(urlNode.Endpoint));
+                Console.WriteLine(_diagnostics.ErrCodeNot200(urlNode.Endpoint));
 
             RegisterSymbol(symbol, value, TokenType.StringLiteral, _currentDepth, _currentFnScope, false, statusCode);
         }
@@ -413,7 +406,7 @@ namespace Nebula
 
             if (_warnsEnabled)
                 if (!urlNode.Endpoint.Contains("https"))
-                    Console.WriteLine(_error.ApiOverHttp());
+                    Console.WriteLine(_diagnostics.ApiOverHttp());
 
             RegisterRequest(symbol, urlNode);
         }
@@ -430,11 +423,11 @@ namespace Nebula
             else if (arg == TokenType.Warns)
             {
                 if (_currNode > 1)
-                    throw new ArgumentException(_error.InvalidPosUse());
+                    throw new ArgumentException(_diagnostics.InvalidPosUse());
                 _warnsEnabled = true;
             }
             else
-                throw new ArgumentException(_error.InvalidArgFor("use"));
+                throw new ArgumentException(_diagnostics.InvalidArgFor("use"));
         }
 
         private void _InvokeVar(StmtNode node)
@@ -462,7 +455,7 @@ namespace Nebula
                 throw new ArgumentException("fatal: Numeric type is required for increment op");
             
             if (d.IsConstant)
-                throw new ArgumentException(_error.ConstantModif());
+                throw new ArgumentException(_diagnostics.ConstantModif());
 
             return d;
         }
@@ -503,7 +496,7 @@ namespace Nebula
         public void VisitNodes(bool dumpSymbolTable = false)
         {
             if (_stack.Count != 0)
-                throw new ArgumentException(_error.OpenCodeBlock());
+                throw new ArgumentException(_diagnostics.OpenCodeBlock());
 
             var body = _fnAddrTable["Main"];
             InitNewFrame();
@@ -520,7 +513,7 @@ namespace Nebula
                 ScopeCleanUp(_currentDepth);
 
             if (_urls > _res && _warnsEnabled)
-                Console.WriteLine(_error.MissingResCall());
+                Console.WriteLine(_diagnostics.MissingResCall());
 
             if (_debugEnabled && dumpSymbolTable)
                 DumpSymbolTable();
@@ -528,8 +521,8 @@ namespace Nebula
 
         private void _VisitNode(StmtNode node)
         {
-            _error.SrcFile = node.SrcFile;
-            _error.LineNum = node.LineNum;
+            _diagnostics.SrcFile = node.SrcFile;
+            _diagnostics.LineNum = node.LineNum;
 
             var nodeType = node.Keyword;
             
@@ -590,7 +583,7 @@ namespace Nebula
             else if (nodeType == TokenType.Var)
                 _InvokeVar(node);
             else if (nodeType != TokenType.Def)
-                throw new ArgumentException(_error.InvokeError(node.GetKeyword()));
+                throw new ArgumentException(_diagnostics.InvokeError(node.GetKeyword()));
         }
     }
 }
