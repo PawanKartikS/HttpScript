@@ -28,7 +28,7 @@ namespace Nebula
                 }
             }
 
-            ast.VisitNodes();
+            ast.Finish();
         }
     }
 }
