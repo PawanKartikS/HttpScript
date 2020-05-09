@@ -30,23 +30,30 @@ namespace Nebula
         public void AppendNode(string[] tokens, string currSrcFile)
         {
             _currLineNum++;
+            // TODO: Shouldn't happen. Lexer should skip such lines.
+            if (tokens.Length == 0)
+                return;
+            
+            // In case AppendNode() bails out.
             SetSourceFile(currSrcFile);
 
+            // Set up required values for diagnostics.
+            // TODO: Diagnostics must be accessible for Parser through Parse.ToNode().
             _diagnostics.LineNum = _currLineNum;
             _diagnostics.SrcFile = currSrcFile;
 
-            if (tokens.Length == 0)
-                return;
-
             var keyword = tokens[0];
             var tokenType = GetTokenType(keyword);
+            
             if (tokenType == TokenType.Comment)
                 return;
 
             var node = Parse.Parse.ToNode(tokens);
+            // We do not recognize this keyword.
             if (node == null)
                 throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
 
+            // Def is an exception. It is invoked in P-1 and not P-2.
             if (tokenType == TokenType.Def)
             {
                 if (_insideFn)
@@ -56,9 +63,12 @@ namespace Nebula
                 _insideFn = true;
             }
 
+            // Every line must fall under a valid function area. The only exception is Def which
+            // marks the beginning of such area.
             if (node.Keyword != TokenType.Def && !_insideFn)
                 throw new ArgumentException(_diagnostics.DanglingStatement(keyword));
 
+            // In case EvaluateNode() bails out (in P-2).
             node.LineNum = _currLineNum;
             node.SrcFile = currSrcFile;
 
@@ -68,15 +78,29 @@ namespace Nebula
                 if (!_IsBranch(tokenType))
                     return;
 
-                if (tokenType != TokenType.Def && tokenType != TokenType.For && tokenType != TokenType.If)
-                    throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
+                // _IsBranch() returns true for Else and End.
+                var _ = tokenType switch
+                {
+                    TokenType.Def    => true,
+                    TokenType.For    => true,
+                    TokenType.If     => true,
+                    TokenType.OpenBr => true,
+                    // Do not push Else & End to stack.
+                    _ => throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword))
+                };
 
                 _lr = 1;
                 _stack.Push(node);
                 return;
             }
-
-            if (tokenType == TokenType.Def || tokenType == TokenType.For || tokenType == TokenType.If)
+            
+            // Branch required
+            // Next incoming statements are appended to the TOS's body/alt.
+            if (tokenType == TokenType.Def ||
+                tokenType == TokenType.For ||
+                tokenType == TokenType.If  ||
+                // We're opening a resource intensive block.
+                tokenType == TokenType.OpenBr)
             {
                 if (_lr == 1)
                     _stack.Peek().Body.Add(node);
@@ -84,6 +108,7 @@ namespace Nebula
                     _stack.Peek().Alt.Add(node);
 
                 _auxiliaryStack.Push(_lr);
+                // Transition to new state.
                 _lr = 1;
                 _stack.Push(node);
                 return;
@@ -105,12 +130,28 @@ namespace Nebula
                 return;
             }
 
+            // End of resource intensive block.
+            if (tokenType == TokenType.CloseBr)
+            {
+                var top = _stack.Peek().Keyword;
+                if (top != TokenType.OpenBr)
+                    throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
+
+                _stack.Pop();
+                return;
+            }
+
             if (tokenType == TokenType.End)
             {
                 var top = _stack.Peek().Keyword;
                 // End can occur only for Def, For and If.
-                if (top != TokenType.Def && top != TokenType.For && top != TokenType.If)
-                    throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword));
+                var _ = top switch
+                {
+                    TokenType.Def     => true,
+                    TokenType.For     => true,
+                    TokenType.If      => true,
+                    _ => throw new ArgumentException(_diagnostics.UnExpectedKeyword(keyword))
+                };
                 
                 // Close the function body
                 if (_stack.Peek().Keyword == TokenType.Def)
@@ -153,11 +194,12 @@ namespace Nebula
         {
             return type switch
             {
-                TokenType.Def  => true,
-                TokenType.For  => true,
-                TokenType.If   => true,
-                TokenType.Else => true,
-                TokenType.End  => true,
+                TokenType.Def    => true,
+                TokenType.For    => true,
+                TokenType.If     => true,
+                TokenType.Else   => true,
+                TokenType.End    => true,
+                TokenType.OpenBr => true,
                 _ => false
             };
         }

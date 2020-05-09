@@ -414,7 +414,7 @@ namespace Nebula
             _diagnostics.LineNum = node.LineNum;
 
             var nodeType = node.Keyword;
-            
+
             if (nodeType == TokenType.PostDecOp)
                 _EvaluateDec(node);
             else if (nodeType == TokenType.Del)
@@ -452,6 +452,16 @@ namespace Nebula
                         _EvaluateNode(child);
 
                 _currDepth--;
+                if (_scopeEnabled)
+                    ScopeCleanUp(_currDepth);
+            }
+            else if (nodeType == TokenType.OpenBr)
+            {
+                _currDepth++;
+                foreach (var child in node.Body)
+                    _EvaluateNode(child);
+                _currDepth--;
+                
                 if (_scopeEnabled)
                     ScopeCleanUp(_currDepth);
             }

@@ -47,6 +47,8 @@ namespace Nebula.Parse
 
             switch (tokenType)
             {
+                case TokenType.CloseBr:
+                    return new ScopeNode(tokens) {Keyword = TokenType.CloseBr};
                 case TokenType.Def:
                     return new DefNode(tokens);
                 case TokenType.Del:
@@ -63,6 +65,8 @@ namespace Nebula.Parse
                     return new IfNode(tokens) {Keyword = TokenType.For};
                 case TokenType.If:
                     return new IfNode(tokens);
+                case TokenType.OpenBr:
+                    return new ScopeNode(tokens);
                 case TokenType.Print:
                     return new PrintNode(tokens);
                 case TokenType.Read:
@@ -86,7 +90,7 @@ namespace Nebula.Parse
                 var t = tokens[0];
                 if (GetTokenType(t[^1]) == TokenType.Inc && GetTokenType(t[^2]) == TokenType.Inc)
                     return new UnaryNode(tokens) {Keyword = TokenType.PostIncOp};
-                
+
                 if (GetTokenType(t[^1]) == TokenType.Dec && GetTokenType(t[^2]) == TokenType.Dec)
                     return new UnaryNode(tokens) {Keyword = TokenType.PostDecOp};
             }
