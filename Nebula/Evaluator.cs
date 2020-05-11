@@ -94,6 +94,9 @@ namespace Nebula
             // Avoid HashSet<> to prevent additional overhead!
             var res = fnName switch
             {
+                "input"  => Builtin.ConsoleIo.ReadLine(fnArgs.ToList()),
+                "atoi"   => Builtin.StringMethods.Strconv(fnArgs.ToList(), Builtin.StringMethods.StrConv.Atoi),
+                "itoa"   => Builtin.StringMethods.Strconv(fnArgs.ToList(), Builtin.StringMethods.StrConv.Itoa),
                 "strlen" => Builtin.StringMethods.StringLength(fnArgs.ToList()),
                 "strrev" => Builtin.StringMethods.StringRev(fnArgs.ToList()),
                 _ => null
@@ -101,7 +104,10 @@ namespace Nebula
 
             if (res == null)
                 throw new ArgumentException(_diagnostics.UndeclaredFn(fnName));
-            _fnReturnStack.Push(res);
+            
+            // res.Item1 (result) is set to null for void functions.
+            if (res.Item1 != null)
+                _fnReturnStack.Push(res);
         }
         
         private void _EvaluateDec(StmtNode node)

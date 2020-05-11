@@ -7,6 +7,31 @@ namespace Nebula.Builtin
 {
     internal static class StringMethods
     {
+        public enum StrConv
+        {
+            Atoi,
+            Itoa
+        }
+
+        public static Tuple<string, TokenType> Strconv(List<Tuple<string, TokenType>> fnArgs, StrConv convMethod)
+        {
+            // This method just changes the targetType (just the data type field in the symbol table).
+            // Any function invoked with this variable as an argument does the conversions as required.
+            var method = convMethod == StrConv.Atoi ?
+                "atoi" :
+                "itoa";
+            
+            var targetType = convMethod == StrConv.Atoi ?
+                TokenType.Numeric :
+                TokenType.StringLiteral;
+
+            if (fnArgs.Count != 1)
+                throw new ArgumentException($"fatal: {method}() takes only 1 argument");
+
+            var (arg, _) = fnArgs[0];
+            return new Tuple<string, TokenType>(arg, targetType);
+        }
+
         public static Tuple<string, TokenType> StringLength(List<Tuple<string, TokenType>> fnArgs)
         {
             if (fnArgs.Count != 1)
