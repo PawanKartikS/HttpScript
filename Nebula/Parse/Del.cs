@@ -3,20 +3,18 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Del
+    internal class Del : TokenStream
     {
         public readonly string Var;
 
-        public Del(IEnumerable<string> tokens)
+        public Del(IEnumerable<string> tokens) : base(tokens)
         {
-            var stream = new TokenStream(tokens);
-            stream.Ensure(Tokens.TokenType.Del, true);
-            
-            if (stream.Peek() != Tokens.TokenType.Variable)
+            Ensure(Tokens.TokenType.Del, true);
+            if (Peek() != Tokens.TokenType.Variable)
                 throw new ArgumentException("parse: argument to del must be a variable");
 
-            (Var, _)  = stream.Consume();
-            stream.Ensure(0);
+            (Var, _)  = Consume();
+            Ensure(0);
         }
     }
 }

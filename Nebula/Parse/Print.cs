@@ -3,17 +3,15 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Print
+    internal class Print : TokenStream
     {
         public readonly string Str;
         public readonly Tokens.TokenType ArgType;
 
-        public Print(IEnumerable<string> tokens)
+        public Print(IEnumerable<string> tokens) : base(tokens)
         {
-            var stream = new TokenStream(tokens);
-            stream.Ensure(Tokens.TokenType.Print, true);
-            
-            (Str, ArgType) = stream.Consume();
+            Ensure(Tokens.TokenType.Print, true);
+            (Str, ArgType) = Consume();
             _ = ArgType switch
             {
                 Tokens.TokenType.StringLiteral => true,
@@ -22,7 +20,7 @@ namespace Nebula.Parse
                 _  => throw new ArgumentException("fatal: specified value is not a valid type for rhs")
             };
             
-            stream.Ensure(0);
+            Ensure(0);
         }
     }
 }

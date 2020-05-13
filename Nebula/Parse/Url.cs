@@ -3,52 +3,49 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Url
+    internal class Url : TokenStream
     {
         public long Timeout = 5000;
         public readonly string Lhs;
         public bool TimeoutBehaviour = false;
         public string Endpoint, Method = "GET";
 
-        private readonly Func<TokenStream, bool> _tryParseComma = (stream) =>
+        private void TryParseComma()
         {
-            var advance = stream.LookAhead();
+            var advance = LookAhead();
             if (advance == Tokens.TokenType.Unknown || advance == Tokens.TokenType.CloseBr)
-                return false;
-            stream.Ensure(Tokens.TokenType.Comma, true);
-            return true;
-        };
-
-        public Url(IEnumerable<string> tokens)
-        {
-            var stream = new TokenStream(tokens);
-            stream.Ensure(Tokens.TokenType.Url, true);
-            
-            if (stream.Peek() != Tokens.TokenType.Variable)
-                throw new ArgumentException("parse: argument to read must be a variable");
-
-            (Lhs, _) = stream.Consume();
-            stream.Ensure(Tokens.TokenType.EqualTo, true);
-            ParseParams(stream);
+                return;
+            Ensure(Tokens.TokenType.Comma, true);
         }
 
-        private void ParseParams(TokenStream stream)
+        public Url(IEnumerable<string> tokens) : base(tokens)
+        {
+            Ensure(Tokens.TokenType.Url, true);
+            if (Peek() != Tokens.TokenType.Variable)
+                throw new ArgumentException("parse: argument to read must be a variable");
+
+            (Lhs, _) = Consume();
+            Ensure(Tokens.TokenType.EqualTo, true);
+            ParseParams();
+        }
+
+        private void ParseParams()
         {
             var parsedParams = false;
-            stream.Ensure(Tokens.TokenType.OpenBr, true);
-            while (stream.Peek() != Tokens.TokenType.CloseBr)
+            Ensure(Tokens.TokenType.OpenBr, true);
+            while (Peek() != Tokens.TokenType.CloseBr)
             {
                 parsedParams = true;
-                if (stream.Peek() == Tokens.TokenType.Endpoint)
-                    ParseEndpoint(stream);
-                else if (stream.Peek() == Tokens.TokenType.Halt)
-                    ParseTimeoutBehaviour(stream);
-                else if (stream.Peek() == Tokens.TokenType.Method)
-                    ParseMethod(stream);
-                else if (stream.Peek() == Tokens.TokenType.Timeout)
-                    ParseTimeout(stream);
+                if (Peek() == Tokens.TokenType.Endpoint)
+                    ParseEndpoint();
+                else if (Peek() == Tokens.TokenType.Halt)
+                    ParseTimeoutBehaviour();
+                else if (Peek() == Tokens.TokenType.Method)
+                    ParseMethod();
+                else if (Peek() == Tokens.TokenType.Timeout)
+                    ParseTimeout();
                 else
-                    throw new ArgumentException($"fatal: expecting parameter instead of {stream.Consume()}");
+                    throw new ArgumentException($"fatal: expecting parameter instead of {Consume()}");
             }
             
             if (!parsedParams)
@@ -64,46 +61,46 @@ namespace Nebula.Parse
             if (!isMethodValid)
                 throw new ArgumentException($"fatal: invalid method specified: {Method}");
             
-            stream.Ensure(Tokens.TokenType.CloseBr, true);
-            stream.Ensure(0);
+            Ensure(Tokens.TokenType.CloseBr, true);
+            Ensure(0);
         }
 
-        private void ParseEndpoint(TokenStream stream)
+        private void ParseEndpoint()
         {
-            stream.Ensure(Tokens.TokenType.Endpoint, true);
-            stream.Ensure(Tokens.TokenType.FieldAccess, true);
+            Ensure(Tokens.TokenType.Endpoint, true);
+            Ensure(Tokens.TokenType.FieldAccess, true);
 
-            (Endpoint, _) = stream.Consume();
-            _tryParseComma(stream);
+            (Endpoint, _) = Consume();
+            TryParseComma();
         }
 
-        private void ParseMethod(TokenStream stream)
+        private void ParseMethod()
         {
-            stream.Ensure(Tokens.TokenType.Method, true);
-            stream.Ensure(Tokens.TokenType.FieldAccess, true);
+            Ensure(Tokens.TokenType.Method, true);
+            Ensure(Tokens.TokenType.FieldAccess, true);
             
-            (Method, _) = stream.Consume();
-            _tryParseComma(stream);
+            (Method, _) = Consume();
+            TryParseComma();
         }
 
-        private void ParseTimeout(TokenStream stream)
+        private void ParseTimeout()
         {
-            stream.Ensure(Tokens.TokenType.Timeout, true);
-            stream.Ensure(Tokens.TokenType.FieldAccess, true);
+            Ensure(Tokens.TokenType.Timeout, true);
+            Ensure(Tokens.TokenType.FieldAccess, true);
             
-            var (timeout, _) = stream.Consume();
+            var (timeout, _) = Consume();
             Timeout = long.Parse(timeout);
-            _tryParseComma(stream);
+            TryParseComma();
         }
 
-        private void ParseTimeoutBehaviour(TokenStream stream)
+        private void ParseTimeoutBehaviour()
         {
-            stream.Ensure(Tokens.TokenType.Halt, true);
-            stream.Ensure(Tokens.TokenType.FieldAccess, true);
+            Ensure(Tokens.TokenType.Halt, true);
+            Ensure(Tokens.TokenType.FieldAccess, true);
 
-            var (timeoutBehaviour, _) = stream.Consume();
+            var (timeoutBehaviour, _) = Consume();
             TimeoutBehaviour = bool.Parse(timeoutBehaviour);
-            _tryParseComma(stream);
+            TryParseComma();
         }
     }
 }

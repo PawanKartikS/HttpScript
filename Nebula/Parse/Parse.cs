@@ -95,7 +95,8 @@ namespace Nebula.Parse
                     return new UnaryNode(tokens) {Keyword = TokenType.PostDecOp};
             }
 
-            if (tokens.Length >= 2 && GetTokenType(tokens[1]) == TokenType.OpenPr)
+            if (tokens.Length >= 2 && GetTokenType(tokens[1]) == TokenType.OpenPr &&
+                GetTokenType(tokens[^1]) == TokenType.ClosePr)
                 // Keyword is set by StmtNode(). But this is an exception case. Override the keyword.
                 return new FnCallNode(tokens) {Keyword = TokenType.FnCall};
 

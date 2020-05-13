@@ -3,20 +3,18 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Read
+    internal class Read : TokenStream
     {
         public readonly string Symbol;
 
-        public Read(IEnumerable<string> tokens)
+        public Read(IEnumerable<string> tokens) : base(tokens)
         {
-            var stream = new TokenStream(tokens);
-            stream.Ensure(Tokens.TokenType.Read, true);
-            
-            if (stream.Peek() != Tokens.TokenType.Variable)
+            Ensure(Tokens.TokenType.Read, true);
+            if (Peek() != Tokens.TokenType.Variable)
                 throw new ArgumentException("parse: argument to read must be a variable");
 
-            (Symbol, _) = stream.Consume();
-            stream.Ensure(0);
+            (Symbol, _) = Consume();
+            Ensure(0);
         }
     }
 }

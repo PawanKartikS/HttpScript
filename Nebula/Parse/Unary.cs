@@ -4,14 +4,13 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Unary
+    internal class Unary : TokenStream
     {
         public readonly string Arg;
 
-        public Unary(IEnumerable<string> tokens)
+        public Unary(IEnumerable<string> tokens) : base(tokens)
         {
-            var stream = new TokenStream(tokens);
-            (Arg, _) = stream.Consume();
+            (Arg, _) = Consume();
             Arg = Arg.Substring(0, Arg.Length - 2);
             
             if (GetTokenType(Arg) != TokenType.Variable)

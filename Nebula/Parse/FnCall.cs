@@ -3,28 +3,27 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class FnCall
+    internal class FnCall : TokenStream
     {
         public readonly string FnName;
         public readonly List<Tuple<string, Tokens.TokenType>> FnArgs;
 
-        public FnCall(IEnumerable<string> tokens)
+        public FnCall(IEnumerable<string> tokens) : base(tokens)
         {
             FnArgs = new List<Tuple<string, Tokens.TokenType>>();
-            var stream = new TokenStream(tokens);
-            var (fnName, type) = stream.Consume();
+            var (fnName, type) = Consume();
             
             if (type != Tokens.TokenType.Variable)
                 throw new ArgumentException($"parse: invalid function name {fnName}");
             FnName = fnName;
             
-            _ParseFnArgs(stream);
-            stream.Ensure(0);
+            _ParseFnArgs();
+            Ensure(0);
         }
 
-        private void _ParseFnArgs(TokenStream stream)
+        private void _ParseFnArgs()
         {
-            var args = Parse.ArgumentList(stream);
+            var args = Parse.ArgumentList(this);
             foreach (var (arg, argType) in args)
             {
                 _ = argType switch

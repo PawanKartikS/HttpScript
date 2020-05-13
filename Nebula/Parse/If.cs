@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class If
+    internal class If : TokenStream
     {
         public enum IfType
         {
@@ -19,39 +19,37 @@ namespace Nebula.Parse
         public readonly Tokens.TokenType LhsType, RhsType;
         public readonly Tokens.TokenType ComparisonOperator;
         
-        public If(IEnumerable<string> tokens)
+        public If(IEnumerable<string> tokens) : base(tokens)
         {
             InverseEval = false;
             Type = IfType.Unknown;
 
-            var stream = new TokenStream(tokens);
-            stream.Consume();
-            
-            if (stream.Peek() == Tokens.TokenType.BooleanFalse)
+            Consume();
+            if (Peek() == Tokens.TokenType.BooleanFalse)
             {
                 InverseEval = true;
-                stream.Consume();
+                Consume();
             }
 
-            if (stream.Peek() == Tokens.TokenType.Success)
+            if (Peek() == Tokens.TokenType.Success)
             {
                 Type = IfType.LastSuccess;
-                stream.Ensure(Tokens.TokenType.Success, true);
-                stream.Ensure(0);
+                Ensure(Tokens.TokenType.Success, true);
+                Ensure(0);
                 return;
             }
 
-            (Lhs, LhsType) = stream.Consume();
-            if (stream.Empty())
+            (Lhs, LhsType) = Consume();
+            if (Empty())
             {
                 Type = IfType.VariableLookup;
                 return;
             }
 
-            var (comp, _) = stream.Consume();
-            if (stream.Peek() == Tokens.TokenType.EqualTo)
+            var (comp, _) = Consume();
+            if (Peek() == Tokens.TokenType.EqualTo)
             {
-                var (t, _) = stream.Consume();
+                var (t, _) = Consume();
                 comp += t;
             }
 
@@ -70,8 +68,8 @@ namespace Nebula.Parse
             if (!isValid)
                 throw new ArgumentException($"fatal: invalid comparison operator {comp}");
 
-            (Rhs, RhsType) = stream.Consume();
-            stream.Ensure(0);
+            (Rhs, RhsType) = Consume();
+            Ensure(0);
             if (Type == IfType.Unknown)
                 Type = IfType.SimpleComparison;
         }

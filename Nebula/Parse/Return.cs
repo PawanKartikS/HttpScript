@@ -3,20 +3,18 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Return
+    internal class Return : TokenStream
     {
         public readonly string Arg;
         public readonly Tokens.TokenType ArgType;
 
-        public Return(IEnumerable<string> tokens)
+        public Return(IEnumerable<string> tokens) : base(tokens)
         {
-            var stream = new TokenStream(tokens);
-            stream.Ensure(Tokens.TokenType.Return, true);
-
-            if (stream.Empty())
+            Ensure(Tokens.TokenType.Return, true);
+            if (Empty())
                 return;
 
-            (Arg, ArgType) = stream.Consume();
+            (Arg, ArgType) = Consume();
             _ = ArgType switch
             {
                 Tokens.TokenType.StringLiteral => true,
@@ -25,7 +23,7 @@ namespace Nebula.Parse
                 _  => throw new ArgumentException("fatal: invalid argument for return")
             };
 
-            stream.Ensure(0);
+            Ensure(0);
         }
     }
 }

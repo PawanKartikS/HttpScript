@@ -8,7 +8,7 @@ namespace Nebula
     {
         private readonly Queue<string> _stream;
 
-        public TokenStream(IEnumerable<string> tokens)
+        protected TokenStream(IEnumerable<string> tokens)
         {
             _stream = new Queue<string>();
             foreach (var token in tokens)
@@ -29,7 +29,7 @@ namespace Nebula
                     Tokens.TokenType.StringLiteral);
         }
 
-        public bool Empty() => _stream.Count == 0;
+        protected bool Empty() => _stream.Count == 0;
 
         public void Ensure(Tokens.TokenType type, bool discard = false, bool strictCheck = true)
         {
@@ -49,7 +49,7 @@ namespace Nebula
                 _stream.Dequeue();
         }
 
-        public void Ensure(int size)
+        protected void Ensure(int size)
         {
             if (size == 0 && !Empty() && Tokens.GetTokenType(_stream.Peek()) == Tokens.TokenType.Comment)
                 return;

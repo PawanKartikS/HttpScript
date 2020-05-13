@@ -3,28 +3,27 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Field
+    internal class Field : TokenStream
     {
         public readonly string Lhs, Obj;
 
-        public Field(IEnumerable<string> tokens, Tokens.TokenType property)
+        public Field(IEnumerable<string> tokens, Tokens.TokenType property) : base(tokens)
         {
-            var stream = new TokenStream(tokens);
-            stream.Ensure(property, true);
+            Ensure(property, true);
             
-            if (stream.Peek() != Tokens.TokenType.Variable)
+            if (Peek() != Tokens.TokenType.Variable)
                 throw new ArgumentException("parse: lhs for field must be a variable");
 
-            (Lhs, _) = stream.Consume();
-            stream.Ensure(Tokens.TokenType.EqualTo, true);
+            (Lhs, _) = Consume();
+            Ensure(Tokens.TokenType.EqualTo, true);
 
             // TODO: Properly validate Obj
-            (Obj, _) = stream.Consume();
-            stream.Ensure(Tokens.TokenType.FieldAccess, true);
-            stream.Ensure(Tokens.TokenType.FieldAccess, true);
+            (Obj, _) = Consume();
+            Ensure(Tokens.TokenType.FieldAccess, true);
+            Ensure(Tokens.TokenType.FieldAccess, true);
 
-            stream.Ensure(property, true);
-            stream.Ensure(0);
+            Ensure(property, true);
+            Ensure(0);
         }
     }
 }

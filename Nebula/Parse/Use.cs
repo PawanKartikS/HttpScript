@@ -2,18 +2,16 @@ using System.Collections.Generic;
 
 namespace Nebula.Parse
 {
-    internal class Use
+    internal class Use : TokenStream
     {
         public readonly Tokens.TokenType Arg;
 
-        public Use(IEnumerable<string> tokens)
+        public Use(IEnumerable<string> tokens) : base(tokens)
         {
-            var stream = new TokenStream(tokens);
-            stream.Ensure(Tokens.TokenType.Use, true);
-
-            Arg = stream.Peek();
-            stream.Consume();
-            stream.Ensure(0);
+            Ensure(Tokens.TokenType.Use, true);
+            Arg = Peek();
+            Consume();
+            Ensure(0);
         }
     }
 }
