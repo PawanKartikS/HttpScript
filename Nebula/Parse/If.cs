@@ -25,7 +25,7 @@ namespace Nebula.Parse
             Type = IfType.Unknown;
 
             Consume();
-            if (Peek() == Tokens.TokenType.BooleanFalse)
+            if (Peek() == Tokens.TokenType.NotOperator)
             {
                 InverseEval = true;
                 Consume();

@@ -34,7 +34,6 @@ namespace Nebula
             Warns,
 
             // Syntax
-            BooleanFalse,
             Comment,
             Comma,
             CompEq,
@@ -53,6 +52,7 @@ namespace Nebula
             LessThanEq,
             Not,
             NotEqual,
+            NotOperator,
             SqBrOpen,
             SqBrClose,
             
@@ -120,7 +120,6 @@ namespace Nebula
                 "warns"    => TokenType.Warns,
                 
                 // Syntax
-                "!"   => TokenType.BooleanFalse,
                 "#"   => TokenType.Comment,
                 ","   => TokenType.Comma,
                 "=="  => TokenType.CompEq,
@@ -139,6 +138,7 @@ namespace Nebula
                 "<="  => TokenType.LessThanEq,
                 "not" => TokenType.Not,
                 "!="  => TokenType.NotEqual,
+                "!"   => TokenType.NotOperator,
                 "["   => TokenType.SqBrOpen,
                 "]"   => TokenType.SqBrClose,
                 
