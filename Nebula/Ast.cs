@@ -126,7 +126,11 @@ namespace Nebula
                 // Probably else-if.
                 // Recursively parse and add the if to AST.
                 if (elseNode.TokensLength > 1)
+                {
+                    AppendNode(new[] {"end"}, currSrcFile);
                     AppendNode(tokens.Skip(1).ToArray(), currSrcFile);
+                }
+                
                 return;
             }
 
