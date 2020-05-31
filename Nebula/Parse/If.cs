@@ -8,8 +8,8 @@ namespace Nebula.Parse
         public enum IfType
         {
             // Already evaluated
-            False,
-            True,
+            EvaluatedToFalse,
+            EvaluatedToTrue,
             
             // Requires evaluation
             LastSuccess,
@@ -33,7 +33,7 @@ namespace Nebula.Parse
             if (Peek() == Tokens.TokenType.BooleanFalse)
             {
                 Consume();
-                Type = IfType.False;
+                Type = IfType.EvaluatedToFalse;
                 Ensure(0);
                 return;
             }
@@ -41,7 +41,7 @@ namespace Nebula.Parse
             if (Peek() == Tokens.TokenType.BooleanTrue)
             {
                 Consume();
-                Type = IfType.True;
+                Type = IfType.EvaluatedToTrue;
                 Ensure(0);
                 return;
             }
