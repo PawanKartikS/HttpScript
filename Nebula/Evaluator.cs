@@ -178,19 +178,8 @@ namespace Nebula
             _currFnScope = fnName;
             var fnInitNode = _fnAddrTable[fnName];
 
-            var hitRet = false;
-            foreach (var ch in fnInitNode.Body)
-            {
-                if (hitRet)
-                {
-                    Console.WriteLine(_diagnostics.UnreachableCode(fnName));
-                    break;
-                }
-
-                _EvaluateNode(ch);
-                if (ch.Keyword == TokenType.Return)
-                    hitRet = true;
-            }
+            if (fnInitNode.Body.Any(ch => !_EvaluateNode(ch)))
+                return;
 
             _currFnScope = _fnStack.Pop();
             PopFrame();
@@ -415,7 +404,7 @@ namespace Nebula
             return args;
         }
 
-        private void _EvaluateNode(StmtNode node)
+        private bool _EvaluateNode(StmtNode node)
         {
             _diagnostics.SrcFile = node.SrcFile;
             _diagnostics.LineNum = node.LineNum;
@@ -440,8 +429,9 @@ namespace Nebula
                 var eval = _EvaluateFor(node);
                 while (eval)
                 {
-                    foreach (var child in node.Body)
-                        _EvaluateNode(child);
+                    if (node.Body.Any(child => !_EvaluateNode(child)))
+                        return false;
+
                     eval = _EvaluateFor(node);
                 }
 
@@ -453,10 +443,18 @@ namespace Nebula
             {
                 if (_EvaluateIf(node))
                     foreach (var child in node.Body)
+                    {
                         _EvaluateNode(child);
+                        if (child.Keyword == TokenType.Return)
+                            return false;
+                    }
                 else
                     foreach (var child in node.Alt)
+                    {
                         _EvaluateNode(child);
+                        if (child.Keyword == TokenType.Return)
+                            return false;
+                    }
 
                 _currDepth--;
                 if (_scopeEnabled)
@@ -490,6 +488,8 @@ namespace Nebula
                 _EvaluateVar(node);
             else if (nodeType != TokenType.Def)
                 throw new ArgumentException(_diagnostics.InvokeError(node.GetKeyword()));
+
+            return true;
         }
 
         protected void EvaluateProgram()
@@ -500,7 +500,8 @@ namespace Nebula
             foreach (var ch in body.Body)
             {
                 _currNode++;
-                _EvaluateNode(ch);
+                if (!_EvaluateNode(ch))
+                    return;
             }
             
             PopFrame();
