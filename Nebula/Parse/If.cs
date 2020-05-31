@@ -30,20 +30,17 @@ namespace Nebula.Parse
             Type = IfType.Unknown;
 
             Consume();
-            if (Peek() == Tokens.TokenType.BooleanFalse)
+            switch (Peek())
             {
-                Consume();
-                Type = IfType.EvaluatedToFalse;
-                Ensure(0);
-                return;
-            }
-
-            if (Peek() == Tokens.TokenType.BooleanTrue)
-            {
-                Consume();
-                Type = IfType.EvaluatedToTrue;
-                Ensure(0);
-                return;
+                case Tokens.TokenType.BooleanFalse:
+                case Tokens.TokenType.BooleanTrue :
+                {
+                    var (_, s) = Consume();
+                    Type = s == Tokens.TokenType.BooleanFalse ?
+                        IfType.EvaluatedToFalse : IfType.EvaluatedToTrue;
+                    Ensure(0);
+                    return;
+                }
             }
             
             if (Peek() == Tokens.TokenType.NotOperator)
