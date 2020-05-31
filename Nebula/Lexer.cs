@@ -101,7 +101,8 @@ namespace Nebula
 
         private static IEnumerable<string> _TokenizeUsingRegex(string line)
         {
-            return new List<string>(Regex.Split(line, @"([<>{}*!#{},;():='])|\s+").Where(token => token.Length != 0));
+            return new List<string>(Regex.Split(line, @"([\[\]<>{}*!#{},;():='])|\s+")
+                .Where(token => token.Length != 0));
         }
     }
 }

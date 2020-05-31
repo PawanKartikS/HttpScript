@@ -273,6 +273,15 @@ namespace Nebula
             var newVal = (int.Parse(d.Value) + 1).ToString();
             RegisterSymbol(incNode.Arg, newVal, TokenType.Numeric, d.Depth, _currFnScope);
         }
+        
+        private void _EvaluateIndexer(StmtNode node)
+        {
+            var indexerNode = (IndexerNode) node;
+            var indexerSymbol = GetSymbolValue(indexerNode.Identifier);
+            var indexerValue = indexerSymbol.Value[indexerNode.IndexValue];
+
+            RegisterSymbol(indexerNode.Lhs, indexerValue.ToString(), TokenType.StringLiteral, _currDepth, _currFnScope);
+        }
 
         private void _EvaluatePrint(StmtNode node)
         {
@@ -448,6 +457,8 @@ namespace Nebula
                 if (_scopeEnabled)
                     ScopeCleanUp(_currDepth);
             }
+            else if (nodeType == TokenType.Indexer)
+                _EvaluateIndexer(node);
             else if (nodeType == TokenType.If)
             {
                 if (_EvaluateIf(node))

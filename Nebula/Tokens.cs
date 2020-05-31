@@ -53,6 +53,8 @@ namespace Nebula
             LessThanEq,
             Not,
             NotEqual,
+            SqBrOpen,
+            SqBrClose,
             
             // Data types
             StringLiteral,
@@ -70,6 +72,7 @@ namespace Nebula
             // var y = Foo()  [FnResult]
             FnCall,
             FnResult,
+            Indexer,
             PostIncOp,
             PostDecOp,
             
@@ -136,6 +139,8 @@ namespace Nebula
                 "<="  => TokenType.LessThanEq,
                 "not" => TokenType.Not,
                 "!="  => TokenType.NotEqual,
+                "["   => TokenType.SqBrOpen,
+                "]"   => TokenType.SqBrClose,
                 
                 // Exposed Data Types
                 "str" => TokenType.Str,

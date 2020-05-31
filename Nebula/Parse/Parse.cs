@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using Nebula.SyntaxNodes;
 using static Nebula.Tokens;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Nebula.Parse
 {
@@ -39,16 +41,67 @@ namespace Nebula.Parse
             stream.Ensure(TokenType.ClosePr, true);
             return args;
         }
+        
+        private static bool _IsFnCall(IReadOnlyList<string> tokens)
+        {
+            // func()
+            // func(arg)
+            // func(arg,...)
+            return tokens.Count >= 3 &&
+                   GetTokenType(tokens[1]) == TokenType.OpenPr &&
+                   GetTokenType(tokens[^1]) == TokenType.ClosePr;
+        }
+
+        private static bool _IsFnResult(IReadOnlyCollection<string> tokens)
+        {
+            // var res = func()
+            // var res = func(arg)
+            // var res = func(arg,...)
+            return tokens.Count >= 6 &&
+                   _IsFnCall(tokens.Skip(3).ToImmutableList());
+        }
+
+        private static bool _IsIndexer(IReadOnlyList<string> tokens)
+        {
+            // var idf = arr[idx]
+            return tokens.Count == 7 &&
+                   GetTokenType(tokens[^1]) == TokenType.SqBrClose &&
+                   GetTokenType(tokens[^3]) == TokenType.SqBrOpen;
+        }
+
+        private static bool _IsUnary(IReadOnlyList<string> tokens, out TokenType unaryType)
+        {
+            if (tokens.Count != 1)
+            {
+                unaryType = TokenType.Unknown;
+                return false;
+            }
+
+            var token = tokens[0];
+            var x = GetTokenType(token[^1]);
+            var y = GetTokenType(token[^2]);
+
+            switch (x)
+            {
+                case TokenType.Inc when y == TokenType.Inc:
+                    unaryType = TokenType.PostIncOp;
+                    return true;
+                case TokenType.Dec when y == TokenType.Dec:
+                    unaryType = TokenType.PostDecOp;
+                    return true;
+                default:
+                    unaryType = TokenType.Unknown;
+                    return false;
+            }
+        }
 
         public static StmtNode ToNode(string[] tokens)
         {
             var keyword = tokens[0];
-            var tokenType = GetTokenType(keyword);
+            var keywordType = GetTokenType(keyword);
 
-            switch (tokenType)
+            switch (keywordType)
             {
-                case TokenType.CloseBr:
-                    return new ScopeNode(tokens) {Keyword = TokenType.CloseBr};
                 case TokenType.Def:
                     return new DefNode(tokens);
                 case TokenType.Del:
@@ -67,6 +120,8 @@ namespace Nebula.Parse
                     return new IfNode(tokens);
                 case TokenType.OpenBr:
                     return new ScopeNode(tokens);
+                case TokenType.CloseBr:
+                    return new ScopeNode(tokens) {Keyword = TokenType.CloseBr};
                 case TokenType.Print:
                     return new PrintNode(tokens);
                 case TokenType.Read:
@@ -79,28 +134,26 @@ namespace Nebula.Parse
                     return new UrlNode(tokens);
                 case TokenType.Use:
                     return new UseNode(tokens);
-                case TokenType.Var when tokens.Length > 4 && GetTokenType(tokens[4]) == TokenType.OpenPr:
+                
+                // Var requires some extra work
+                case TokenType.Var when _IsFnResult(tokens):
                     return new FnResNode(tokens) {Keyword = TokenType.FnResult};
+                case TokenType.Var when _IsIndexer(tokens):
+                    return new IndexerNode(tokens) {Keyword = TokenType.Indexer};
+                // Try out the usual declaration parsing. If this fails, it's an invalid statement.
                 case TokenType.Var:
                     return new VarNode(tokens);
+                
+                // Try out everything we support
+                default:
+                    if (_IsFnCall(tokens))
+                        return new FnCallNode(tokens) {Keyword = TokenType.FnCall};
+
+                    if (_IsUnary(tokens, out var unaryType))
+                        return new UnaryNode(tokens) {Keyword = unaryType};
+
+                    return null;
             }
-
-            if (tokens.Length == 1)
-            {
-                var t = tokens[0];
-                if (GetTokenType(t[^1]) == TokenType.Inc && GetTokenType(t[^2]) == TokenType.Inc)
-                    return new UnaryNode(tokens) {Keyword = TokenType.PostIncOp};
-
-                if (GetTokenType(t[^1]) == TokenType.Dec && GetTokenType(t[^2]) == TokenType.Dec)
-                    return new UnaryNode(tokens) {Keyword = TokenType.PostDecOp};
-            }
-
-            if (tokens.Length >= 2 && GetTokenType(tokens[1]) == TokenType.OpenPr &&
-                GetTokenType(tokens[^1]) == TokenType.ClosePr)
-                // Keyword is set by StmtNode(). But this is an exception case. Override the keyword.
-                return new FnCallNode(tokens) {Keyword = TokenType.FnCall};
-
-            return null;
         }
     }
 }
