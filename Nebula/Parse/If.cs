@@ -40,6 +40,14 @@ namespace Nebula.Parse
             }
 
             (Lhs, LhsType) = Consume();
+            var _ = LhsType switch
+            {
+                Tokens.TokenType.Variable      => true,
+                Tokens.TokenType.Numeric       => true,
+                Tokens.TokenType.StringLiteral => true,
+                _ => throw new ArgumentException("parse: invalid LHS for if")
+            };
+            
             if (Empty())
             {
                 Type = IfType.VariableLookup;
@@ -69,6 +77,14 @@ namespace Nebula.Parse
                 throw new ArgumentException($"fatal: invalid comparison operator {comp}");
 
             (Rhs, RhsType) = Consume();
+            _ = RhsType switch
+            {
+                Tokens.TokenType.Variable      => true,
+                Tokens.TokenType.Numeric       => true,
+                Tokens.TokenType.StringLiteral => true,
+                _ => throw new ArgumentException("parse: invalid RHS for if")
+            };
+            
             Ensure(0);
             if (Type == IfType.Unknown)
                 Type = IfType.SimpleComparison;
