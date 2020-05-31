@@ -59,6 +59,10 @@ namespace Nebula
             Numeric,
             Variable,
             
+            // Exposed Data Types
+            Str,
+            Num,
+            
             // Statement types
             // These are to be used when we cannot exactly identify type using the keyword.
             // Example:
@@ -132,6 +136,10 @@ namespace Nebula
                 "<="  => TokenType.LessThanEq,
                 "not" => TokenType.Not,
                 "!="  => TokenType.NotEqual,
+                
+                // Exposed Data Types
+                "str" => TokenType.Str,
+                "num" => TokenType.Num,
                 
                 // Built-in functions
                 // They must map to Variable or else the Parser fails!

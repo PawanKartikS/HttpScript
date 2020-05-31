@@ -11,9 +11,9 @@ namespace Nebula
     {
         private readonly Diagnostics _diagnostics;
         private readonly Stack<string> _fnStack;
-        private readonly Dictionary<string, StmtNode> _fnAddrTable;
         private readonly Stack<Tuple<string, TokenType>> _fnReturnStack;
-        
+        private readonly Dictionary<string, Tuple<StmtNode, TokenType>> _fnAddrTable;
+
         private HttpStatusCode _lastStatusCode;
         private bool _scopeEnabled, _warnsEnabled;
         private string _currFnScope, _currSrcFile;
@@ -23,8 +23,8 @@ namespace Nebula
         {
             _diagnostics = new Diagnostics();
             _fnStack = new Stack<string>();
-            _fnAddrTable = new Dictionary<string, StmtNode>();
             _fnReturnStack = new Stack<Tuple<string, TokenType>>();
+            _fnAddrTable = new Dictionary<string, Tuple<StmtNode, TokenType>>();
 
             _currFnScope = "Main";
             _currSrcFile = currSrcFile;
@@ -129,7 +129,8 @@ namespace Nebula
             var fnName = defNode.FnName;
             if (fnName != "Main")
                 fnName = $"{_currSrcFile}.{defNode.FnName}";
-            _fnAddrTable[fnName] = defNode;
+            
+            _fnAddrTable[fnName] = new Tuple<StmtNode, TokenType>(defNode, defNode.ReturnType);
             RegisterFnSignature(fnName, defNode.FnArgs);
         }
 
@@ -178,7 +179,7 @@ namespace Nebula
             _currFnScope = fnName;
             var fnInitNode = _fnAddrTable[fnName];
 
-            if (fnInitNode.Body.Any(ch => !_EvaluateNode(ch)))
+            if (fnInitNode.Item1.Body.Any(ch => !_EvaluateNode(ch)))
                 return;
 
             _currFnScope = _fnStack.Pop();
@@ -187,14 +188,22 @@ namespace Nebula
 
         private void _EvaluateFnRes(StmtNode node)
         {
-            var stackSz = _fnReturnStack.Count;
+            var size = _fnReturnStack.Count;
             var fnResNode = (FnResNode) node;
-            _EvaluateFn(fnResNode.FnName, fnResNode.FnArgs);
+            var fnName = fnResNode.FnName;
+            _EvaluateFn(fnName, fnResNode.FnArgs);
 
-            if (_fnReturnStack.Count <= stackSz)
-                throw new ArgumentException(_diagnostics.AccessVoidFnRes(fnResNode.FnName));
+            if (_fnReturnStack.Count <= size)
+                throw new ArgumentException(_diagnostics.AccessVoidFnRes(fnName));
 
             var (result, resultType) = _fnReturnStack.Pop();
+            if (result != null && _fnAddrTable.ContainsKey(fnName))
+            {
+                var reqRetType = _fnAddrTable[fnName].Item2;
+                if (reqRetType != TokenType.Unknown && reqRetType != resultType)
+                    throw new ArgumentException($"fatal: expecting return of {reqRetType} for {fnName}");
+            }
+            
             RegisterSymbol(fnResNode.Lhs, result, resultType, _currDepth, _currFnScope);
         }
 
@@ -497,7 +506,7 @@ namespace Nebula
             var body = _fnAddrTable["Main"];
             InitNewFrame();
 
-            foreach (var ch in body.Body)
+            foreach (var ch in body.Item1.Body)
             {
                 _currNode++;
                 if (!_EvaluateNode(ch))

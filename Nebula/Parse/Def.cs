@@ -6,10 +6,12 @@ namespace Nebula.Parse
     internal class Def : TokenStream
     {
         public readonly string FnName;
+        public Tokens.TokenType ReturnType;
         public readonly List<string> FnArgs;
 
         public Def(IEnumerable<string> tokens) : base(tokens)
         {
+            ReturnType = Tokens.TokenType.Unknown;
             FnArgs = new List<string>();
             Ensure(Tokens.TokenType.Def, true);
             
@@ -22,6 +24,9 @@ namespace Nebula.Parse
                 _ParseFnArgs();
             
             Ensure(Tokens.TokenType.FieldAccess, true);
+            if (!Empty())
+                _ParseReturnType();
+            
             Ensure(0);
         }
 
@@ -34,6 +39,17 @@ namespace Nebula.Parse
                     throw new ArgumentException($"parse: invalid arg for func {FnName}");
                 FnArgs.Add(arg);
             }
+        }
+        
+        private void _ParseReturnType()
+        {
+            var (returnType, type) = Consume();
+            ReturnType = type switch
+            {
+                Tokens.TokenType.Str => Tokens.TokenType.StringLiteral,
+                Tokens.TokenType.Num => Tokens.TokenType.Numeric,
+                _ => throw new ArgumentException($"parse: invalid return type in func {FnName} - {returnType}")
+            };
         }
     }
 }
