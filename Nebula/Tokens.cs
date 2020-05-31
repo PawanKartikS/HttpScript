@@ -42,6 +42,7 @@ namespace Nebula
             GreaterThan,
             GreaterThanEq,
             Inc,
+            Is,
             Dec,
             OpenBr,
             CloseBr,
@@ -50,6 +51,7 @@ namespace Nebula
             FieldAccess,
             LessThan,
             LessThanEq,
+            Not,
             NotEqual,
             
             // Data types
@@ -119,6 +121,7 @@ namespace Nebula
                 ">"   => TokenType.GreaterThan,
                 ">="  => TokenType.GreaterThanEq,
                 "+"   => TokenType.Inc,
+                "is"  => TokenType.Is,
                 "-"   => TokenType.Dec,
                 "{"   => TokenType.OpenBr,
                 "}"   => TokenType.CloseBr,
@@ -127,6 +130,7 @@ namespace Nebula
                 ":"   => TokenType.FieldAccess,
                 "<"   => TokenType.LessThan,
                 "<="  => TokenType.LessThanEq,
+                "not" => TokenType.Not,
                 "!="  => TokenType.NotEqual,
                 
                 // Built-in functions

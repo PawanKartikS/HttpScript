@@ -54,11 +54,31 @@ namespace Nebula.Parse
                 return;
             }
 
-            var (comp, _) = Consume();
-            if (Peek() == Tokens.TokenType.EqualTo)
+            // ==, !=, <, <=, >, >=
+            // is, is not
+            // consume the first part of the operator
+            var (comp, compType) = Consume();
+            
+            if (compType == Tokens.TokenType.Is)
             {
-                var (t, _) = Consume();
-                comp += t;
+                // is -> ==
+                comp = "==";
+                
+                // is not -> !=
+                if (Peek() == Tokens.TokenType.Not)
+                {
+                    comp = "!=";
+                    Consume(); // not
+                }
+            }
+            else
+            {
+                // <=, >=
+                if (Peek() == Tokens.TokenType.EqualTo)
+                {
+                    var (t, _) = Consume();
+                    comp += t;
+                }    
             }
 
             ComparisonOperator = Tokens.GetTokenType(comp);
