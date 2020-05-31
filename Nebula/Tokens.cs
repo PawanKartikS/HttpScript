@@ -34,6 +34,8 @@ namespace Nebula
             Warns,
 
             // Syntax
+            BooleanFalse,
+            BooleanTrue,
             Comment,
             Comma,
             CompEq,
@@ -120,6 +122,8 @@ namespace Nebula
                 "warns"    => TokenType.Warns,
                 
                 // Syntax
+                "False" => TokenType.BooleanFalse,
+                "True"  => TokenType.BooleanTrue,
                 "#"   => TokenType.Comment,
                 ","   => TokenType.Comma,
                 "=="  => TokenType.CompEq,

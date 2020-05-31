@@ -7,6 +7,11 @@ namespace Nebula.Parse
     {
         public enum IfType
         {
+            // Already evaluated
+            False,
+            True,
+            
+            // Requires evaluation
             LastSuccess,
             SimpleComparison,
             Unknown,
@@ -25,6 +30,22 @@ namespace Nebula.Parse
             Type = IfType.Unknown;
 
             Consume();
+            if (Peek() == Tokens.TokenType.BooleanFalse)
+            {
+                Consume();
+                Type = IfType.False;
+                Ensure(0);
+                return;
+            }
+
+            if (Peek() == Tokens.TokenType.BooleanTrue)
+            {
+                Consume();
+                Type = IfType.True;
+                Ensure(0);
+                return;
+            }
+            
             if (Peek() == Tokens.TokenType.NotOperator)
             {
                 InverseEval = true;

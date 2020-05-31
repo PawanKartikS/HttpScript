@@ -216,6 +216,9 @@ namespace Nebula
 
             switch (ifNode.IfType)
             {
+                case Parse.If.IfType.False: return false;
+                case Parse.If.IfType.True : return true;
+                
                 case Parse.If.IfType.LastSuccess when _warnsEnabled && _lastStatusCode == HttpStatusCode.Unused:
                     return _lastStatusCode == HttpStatusCode.OK;
 
