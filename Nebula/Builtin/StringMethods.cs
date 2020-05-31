@@ -12,6 +12,21 @@ namespace Nebula.Builtin
             Atoi,
             Itoa
         }
+        
+        public static Tuple<string, TokenType> Strcmp(List<Tuple<string, TokenType>> fnArgs)
+        {
+            if (fnArgs.Count != 2)
+                throw new ArgumentException("fatal: strcmp() takes 2 arguments");
+            
+            if (fnArgs[0].Item2 != TokenType.StringLiteral || fnArgs[1].Item2 != TokenType.StringLiteral)
+                throw new ArgumentException("fatal: strcmp() takes strings as both arguments");
+
+            var s1 = fnArgs[0].Item1;
+            var s2 = fnArgs[1].Item1;
+            var cmp = string.Compare(s1, s2, StringComparison.Ordinal);
+
+            return new Tuple<string, TokenType>(cmp.ToString(), TokenType.Numeric);
+        }
 
         public static Tuple<string, TokenType> Strconv(List<Tuple<string, TokenType>> fnArgs, StrConv convMethod)
         {

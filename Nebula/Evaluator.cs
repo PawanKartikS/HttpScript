@@ -97,6 +97,7 @@ namespace Nebula
                 "input"  => Builtin.ConsoleIo.ReadLine(fnArgs.ToList()),
                 "atoi"   => Builtin.StringMethods.Strconv(fnArgs.ToList(), Builtin.StringMethods.StrConv.Atoi),
                 "itoa"   => Builtin.StringMethods.Strconv(fnArgs.ToList(), Builtin.StringMethods.StrConv.Itoa),
+                "strcmp" => Builtin.StringMethods.Strcmp(fnArgs.ToList()),
                 "strlen" => Builtin.StringMethods.StringLength(fnArgs.ToList()),
                 "strrev" => Builtin.StringMethods.StringRev(fnArgs.ToList()),
                 _ => null
